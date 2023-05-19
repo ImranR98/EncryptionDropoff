@@ -1,0 +1,11 @@
+{
+  "name": "encryptiondropoff",
+  "version": "1.0.0",
+  "description": "App to watch a folder for new files, then notify the user and allow them to remotely initiate the moving of those files into an encrypted container.",
+  "main": "app.js",
+  "scripts": {
+    "test": "echo \"Error: no test specified\" && exit 1"
+  },
+  "author": "Imran Remtulla",
+  "license": "ISC"
+}
