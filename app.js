@@ -55,13 +55,15 @@ fs.watch(environment.WATCH_DIR_PATH, (event, file) => {
   }
 })
 
-const move = (srcDir, dstDir) => {
+const moveDropoff = (srcDir, dstDir) => {
   fs.readdirSync(srcDir).forEach(file => {
-    const src = `${srcDir}/${file}`
-    const dst = `${dstDir}/${file}`
-    fs.cpSync(src, dst, { preserveTimestamps: true })
-    fs.unlinkSync(src)
-    log(`Moved '${src}' to '${dst}'`)
+    if (!shouldIgnoreFile(file)) {
+      const src = `${srcDir}/${file}`
+      const dst = `${dstDir}/${file}`
+      fs.cpSync(src, dst, { preserveTimestamps: true })
+      fs.unlinkSync(src)
+      log(`Moved '${src}' to '${dst}'`)
+    }
   })
 }
 
@@ -81,10 +83,10 @@ app.post('/handleDropoff', (req, res) => {
     exec(`veracrypt -t --non-interactive -p '${req.body.password}' '${environment.VC_CONTAINER_PATH}' '${mountDir}'`)
     // Move dropoff files to an intermediate dir and run the post-process script on them
     intermediateDir = fs.mkdtempSync('/tmp/enc-tmp-')
-    move(environment.WATCH_DIR_PATH, intermediateDir)
+    moveDropoff(environment.WATCH_DIR_PATH, intermediateDir)
     exec(`bash "${environment.POSTPROCESS_SCRIPT_PATH}" "${intermediateDir}" ${environment.POSTPROCESS_SCRIPT_ARGS || ''}`, true)
     // Move them to the mounted container dir
-    move(intermediateDir, mountDir)
+    moveDropoff(intermediateDir, mountDir)
     res.send()
   } catch (err) {
     log(`Failed process attempt`)
