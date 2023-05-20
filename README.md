@@ -6,7 +6,7 @@ Configured via environment variables. See `environment.js` for configuration det
 
 Default script behaviour:
 - The default notification script sends a notification to a random [ntfy.sh](https://ntfy.sh) ID that can be overridden with an extra argument.
-- The default process script prefixes each file with a `YYYY-MM-DD HHMM - ` timestamp based on it's created or modified date.
+- The default post-process script prefixes each file with a `YYYY-MM-DD HHMM - ` timestamp based on its created or modified date.
 
 NOTE:
 - VeraCrypt commands typically require root access.
