@@ -22,11 +22,11 @@
                         </div>
                         <div class="field">
                             <div class="control button-container">
-                                <button class="button is-primary is-fullwidth" type="submit">Handle Dropoff</button>
+                                <button id="submitButton" class="button is-primary is-fullwidth" type="submit">Handle Dropoff</button>
                             </div>
                         </div>
                     </form>
-                    <div id="responsePanel" class="notification" style="display: none; margin-top: 2rem;"></div>
+                    <div id="responsePanel" class="notification" style="display: none; margin-top: 1rem;"></div>
                 </div>
             </div>
         </div>
@@ -34,15 +34,17 @@
 
     <script>
         function handleDropoff() {
+            const responsePanel = document.getElementById("responsePanel")
+            const submitButton = document.getElementById("submitButton")
             const password = document.getElementById("passwordInput").value
-
-            // Create a new HTTP request
+            responsePanel.style.display = 'none'
+            submitButton.disabled = true
             const xhr = new XMLHttpRequest()
             xhr.open("POST", "/handleDropoff", true)
             xhr.setRequestHeader("Content-Type", "application/x-www-form-urlencoded")
             xhr.onreadystatechange = function () {
                 if (xhr.readyState === 4) {
-                    const responsePanel = document.getElementById("responsePanel")
+                    submitButton.disabled = false
                     responsePanel.style.display = 'block'
                     if (xhr.status === 200) {
                         responsePanel.className = "notification is-success"

@@ -20,7 +20,6 @@ app.use(express.json())
 app.use(express.urlencoded({ extended: true }))
 app.use(express.static(path.join(__dirname, 'public'), { extensions: ['html'] }))
 app.post('/handleDropoff', (req, res) => {
-  console.log('abc', req.body)
   let mountDir = null
   try {
     if (!req.body.password) {
