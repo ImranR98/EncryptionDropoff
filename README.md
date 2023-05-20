@@ -11,4 +11,4 @@ Default script behaviour:
 NOTE:
 - VeraCrypt commands typically require root access.
 - Dockerfile is provided for easier packaging and deployment, NOT security as the container MUST have privileged access.
-  - Example: `docker run -v ~/Downloads/container.hc:/container.hc -v ~/Downloads/dropoff:/dropoff -e NOTIF_SCRIPT_ARGS='H9F3bxJG6i2Rq7K1' -p 4321:4321 --name encryption-dropoff encryption-dropoff`
+  - Example: `docker run -v ~/Downloads/container.hc:/container.hc -v ~/Downloads/dropoff:/dropoff -e NOTIF_SCRIPT_ARGS='"H9F3bxJG6i2Rq7K1" "5"' -p 4321:4321 --name encryption-dropoff encryption-dropoff`

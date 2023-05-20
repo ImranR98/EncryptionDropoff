@@ -12,9 +12,9 @@ const config = { // End with '_PATH', '_DIR_PATH', or '_NUM' for extra validatio
     VC_CONTAINER_PATH: '/container.hc', // The VeraCrypt container to move files into
     WATCH_DIR_PATH: '/dropoff', // The directory to watch for new files
     NOTIF_SCRIPT_PATH: __dirname + '/default_notif.sh', // The script to run when there are new files
-    PROCESS_SCRIPT_PATH: __dirname + '/default_process.sh', // The script to run before moving files into the container
+    POSTPROCESS_SCRIPT_PATH: __dirname + '/default_postprocess.sh', // The script to run before moving files into the container
     NOTIF_SCRIPT_ARGS: '', // Optional extra arguments for the notification script (after WATCH_DIR_PATH)
-    PROCESS_SCRIPT_ARGS: '', // Optional extra arguments for the process script (after WATCH_DIR_PATH)
+    POSTPROCESS_SCRIPT_ARGS: '', // Optional extra arguments for the process script (after WATCH_DIR_PATH)
     PORT_NUM: '4321' // HTTP port to listen on
 }
 
