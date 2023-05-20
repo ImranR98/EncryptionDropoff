@@ -1,0 +1,60 @@
+<!DOCTYPE html>
+<html lang="en">
+
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/bulma@0.9.3/css/bulma.min.css">
+    <title>Simple Webpage</title>
+</head>
+
+<body>
+    <section class="section">
+        <div class="container">
+            <div class="columns is-centered">
+                <div class="column is-half">
+                    <form onsubmit="event.preventDefault(); handleDropoff()">
+                        <div class="field">
+                            <label class="label">Password</label>
+                            <div class="control">
+                                <input class="input" type="password" id="passwordInput">
+                            </div>
+                        </div>
+                        <div class="field">
+                            <div class="control button-container">
+                                <button class="button is-primary" type="submit">Handle Dropoff</button>
+                            </div>
+                        </div>
+                    </form>
+                    <div id="responsePanel" class="notification" style="display: none; margin-top: 2rem;"></div>
+                </div>
+            </div>
+        </div>
+    </section>
+
+    <script>
+        function handleDropoff() {
+            const password = document.getElementById("passwordInput").value
+
+            // Create a new HTTP request
+            const xhr = new XMLHttpRequest()
+            xhr.open("POST", "/handleDropoff", true)
+            xhr.setRequestHeader("Content-Type", "application/x-www-form-urlencoded")
+            xhr.onreadystatechange = function () {
+                if (xhr.readyState === 4) {
+                    const responsePanel = document.getElementById("responsePanel")
+                    responsePanel.style.display = 'block'
+                    if (xhr.status === 200) {
+                        responsePanel.className = "notification is-success"
+                    } else {
+                        responsePanel.className = "notification is-danger"
+                    }
+                    responsePanel.textContent = xhr.statusText
+                }
+            }
+            xhr.send("password=" + encodeURIComponent(password))
+        }
+    </script>
+</body>
+
+</html>
