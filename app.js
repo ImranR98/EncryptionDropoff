@@ -27,10 +27,19 @@ const log = (data, isErr = false, skipLines = 0) => {
   console[isErr ? 'error' : 'log'](`${skips}${formatDate(new Date())}: ${data.toString()}`)
 }
 
-const exec = (command, shouldLog = false) => {
-  const output = child_process.execSync(command).toString().trim()
-  if (output && shouldLog) {
-    log('\n' + output)
+const exec = (command, logOnSuccess = false) => {
+  let out = null
+  let err = null
+  try {
+    out = child_process.execSync(`${command} 2>&1`).toString().trim()
+  } catch (e) {
+    err = e.toString().trim()
+  }
+  if (err) {
+    log('\n' + err)
+  }
+  if (out && logOnSuccess) {
+    log('\n' + out)
   }
 }
 
