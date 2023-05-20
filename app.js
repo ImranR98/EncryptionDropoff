@@ -34,8 +34,19 @@ const exec = (command, shouldLog = false) => {
   }
 }
 
+const shouldIgnoreFile = (fileName) => {
+  // Hardcoded syncthing-related files for now - can be user-defined in the future
+  if (file.startsWith('.syncthing') && file.endsWith('.tmp')) {
+    return true
+  }
+  if (file == '.stfolder' || file == '.stversions') {
+    return true
+  }
+  return false
+}
+
 fs.watch(environment.WATCH_DIR_PATH, (event, file) => {
-  if (event == 'rename' && !(file.startsWith('.syncthing') && file.endsWith('.tmp')) && fs.existsSync(`${environment.WATCH_DIR_PATH}/${file}`)) {
+  if (event == 'rename' && !shouldIgnoreFile(file) && fs.existsSync(`${environment.WATCH_DIR_PATH}/${file}`)) {
     try {
       exec(`bash "${environment.NOTIF_SCRIPT_PATH}" "${environment.WATCH_DIR_PATH}" ${environment.NOTIF_SCRIPT_ARGS || ''}`, true)
     } catch (e) {
