@@ -9,12 +9,13 @@ DIRNAME="$1"
 HERE="$(pwd)"
 trap "cd "$HERE"" EXIT
 find "$DIRNAME" -type f -maxdepth 1 | while read -r file; do
+    dir="$(dirname "$file")"
     filename="$(basename "$file")"
     creation_date=$(ls -lc --time-style=+"%Y-%m-%d %H%M" "$file" | awk '{print $6,$7}')
     if [[ $filename == .* ]]; then
         creation_date="."$creation_date""
     fi
-    finalpath="$DIRNAME"/"$creation_date"" - ""$filename"
+    finalpath="$dir"/"$creation_date"" - ""$filename"
     mv "$file" "$finalpath"
 done
 cd "$HERE"

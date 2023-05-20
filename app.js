@@ -48,7 +48,7 @@ const move = (srcDir, dstDir) => {
   fs.readdirSync(srcDir).forEach(file => {
     const src = `${srcDir}/${file}`
     const dst = `${dstDir}/${file}`
-    fs.cpSync(src, dst)
+    fs.cpSync(src, dst, { preserveTimestamps: true })
     fs.unlinkSync(src)
     log(`Moved '${src}' to '${dst}'`)
   })
