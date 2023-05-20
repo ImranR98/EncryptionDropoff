@@ -36,10 +36,10 @@ const exec = (command, shouldLog = false) => {
 
 const shouldIgnoreFile = (fileName) => {
   // Hardcoded syncthing-related files for now - can be user-defined in the future
-  if (file.startsWith('.syncthing') && file.endsWith('.tmp')) {
+  if (fileName.startsWith('.syncthing') && fileName.endsWith('.tmp')) {
     return true
   }
-  if (file == '.stfolder' || file == '.stversions') {
+  if (fileName == '.stfolder' || fileName == '.stversions') {
     return true
   }
   return false
