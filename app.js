@@ -26,7 +26,7 @@ app.post('/handleDropoff', (req, res) => {
     if (!req.body.password) {
       throw 'No password provided'
     }
-    mountDir = fs.mkdtempSync('encryption-dropoff-')
+    mountDir = fs.mkdtempSync('/tmp/enc-')
     child_process.execSync(`veracrypt -t --non-interactive -p '${req.body.password}' '${environment.VC_CONTAINER_PATH}' '${mountDir}'`)
     child_process.execSync(`bash "${environment.PROCESS_SCRIPT_PATH}" "${mountDir}" ${environment.PROCESS_SCRIPT_ARGS || ''}`)
     res.send()
