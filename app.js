@@ -6,7 +6,7 @@ const child_process = require('child_process')
 const environment = require('./environment')
 
 fs.watch(environment.WATCH_DIR_PATH, (event, file) => {
-  if (event == 'rename' && fs.existsSync(file)) {
+  if (event == 'rename' && fs.existsSync(`${environment.WATCH_DIR_PATH}/${file}`)) {
     try {
       console.log(child_process.execSync(`bash "${environment.NOTIF_SCRIPT_PATH}" "${environment.WATCH_DIR_PATH}" ${environment.NOTIF_SCRIPT_ARGS || ''}`))
     } catch (e) {
