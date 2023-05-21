@@ -27,21 +27,23 @@ const log = (data, isErr = false, skipLines = 0) => {
   console[isErr ? 'error' : 'log'](`${skips}${formatDate(new Date())}: ${data.toString()}`)
 }
 
-const exec = (command, logOnSuccess = false) => {
-  let out = null
-  let err = null
-  try {
-    out = child_process.execSync(`${command} 2>&1`).toString().trim()
-  } catch (e) {
-    err = e.toString().trim()
-  }
-  if (err) {
-    log('\n' + err)
-  }
-  if (out && logOnSuccess) {
-    log('\n' + out)
-  }
-}
+const exec = (command, logStdOut = false, logStdErr = false) => new Promise((resolve, reject) => {
+  child_process.exec(`${command}`, (err, stdout, stderr) => {
+    stdout = stdout ? stdout.trim() : stdout
+    stderr = stderr ? stderr.trim() : stderr
+    err = err ? err.toString().trim() : err
+    if (stdout && logStdOut) {
+      log(stdout)
+    }
+    if ((err || stderr) && logStdErr) {
+      log(err || stderr, true)
+    }
+    if (err) {
+      reject(err)
+    }
+    resolve(stdout)
+  })
+})
 
 const shouldIgnoreFile = (fileName) => {
   // Hardcoded syncthing-related files for now - can be user-defined in the future
@@ -56,11 +58,7 @@ const shouldIgnoreFile = (fileName) => {
 
 fs.watch(environment.WATCH_DIR_PATH, (event, file) => {
   if (event == 'rename' && !shouldIgnoreFile(file) && fs.existsSync(`${environment.WATCH_DIR_PATH}/${file}`)) {
-    try {
-      exec(`bash "${environment.NOTIF_SCRIPT_PATH}" "${environment.WATCH_DIR_PATH}" ${environment.NOTIF_SCRIPT_ARGS || ''}`, true)
-    } catch (e) {
-      log(e, true)
-    }
+    exec(`bash "${environment.NOTIF_SCRIPT_PATH}" "${environment.WATCH_DIR_PATH}" ${environment.NOTIF_SCRIPT_ARGS || ''}`, true, true)
   }
 })
 
@@ -80,44 +78,53 @@ const app = express()
 app.use(express.json())
 app.use(express.urlencoded({ extended: true }))
 app.use(express.static(path.join(__dirname, 'public'), { extensions: ['html'] }))
-app.post('/handleDropoff', (req, res) => {
+app.post('/handleDropoff', async (req, res) => {
   let mountDir = null
   let intermediateDir = null
+  const dismount = async () => {
+    try {
+      await exec(`veracrypt -t -d '${environment.VC_CONTAINER_PATH}'`, false, false)
+    } catch {
+      // ignore
+    }
+  }
   try {
     if (!req.body.password) {
       throw 'No password provided'
     }
     // Mount the container
     mountDir = fs.mkdtempSync('/tmp/enc-mnt-')
-    exec(`veracrypt -t --non-interactive -p '${req.body.password}' '${environment.VC_CONTAINER_PATH}' '${mountDir}'`)
+    await exec(`veracrypt -t --non-interactive -p '${req.body.password}' '${environment.VC_CONTAINER_PATH}' '${mountDir}'`)
     // Move dropoff files to an intermediate dir and run the post-process script on them
     intermediateDir = fs.mkdtempSync('/tmp/enc-tmp-')
     moveDropoff(environment.WATCH_DIR_PATH, intermediateDir)
-    exec(`bash "${environment.POSTPROCESS_SCRIPT_PATH}" "${intermediateDir}" ${environment.POSTPROCESS_SCRIPT_ARGS || ''}`, true)
+    await exec(`bash "${environment.POSTPROCESS_SCRIPT_PATH}" "${intermediateDir}" ${environment.POSTPROCESS_SCRIPT_ARGS || ''}`, true)
     // Move them to the mounted container dir
     moveDropoff(intermediateDir, mountDir)
+    // Dismount and update container mdate
+    await dismount()
+    const currentTime = new Date()
+    fs.utimesSync(environment.VC_CONTAINER_PATH, currentTime, currentTime)
+    log('Dropoff Successful.')
     res.send()
   } catch (err) {
-    log(`Failed process attempt`)
     log(err.toString().split(req.body.password).join(req.body.password ? '****' : ''))
     res.status(400).send()
   } finally {
-    try {
-      exec(`veracrypt -t -d '${environment.VC_CONTAINER_PATH}' >/dev/null`)
-      const currentTime = new Date()
-      fs.utimesSync(environment.VC_CONTAINER_PATH, currentTime, currentTime)
-      if (mountDir) {
-        fs.unlinkSync(mountDir)
+    await dismount()
+    if (mountDir) {
+      if (fs.readdirSync(mountDir).length == 0) {
+        fs.rmdirSync(mountDir)
+      } else {
+        log(`Mount dir is not empty: ${mountDir}`, true)
       }
-      if (intermediateDir) {
-        if (fs.readdirSync(intermediateDir).length == 0) {
-          fs.unlinkSync(intermediateDir)
-        } else {
-          log(`Intermediate dir is not empty: ${intermediateDir}`, true)
-        }
+    }
+    if (intermediateDir) {
+      if (fs.readdirSync(intermediateDir).length == 0) {
+        fs.rmdirSync(intermediateDir)
+      } else {
+        log(`Intermediate dir is not empty: ${intermediateDir}`, true)
       }
-    } catch {
-      // ignore
     }
   }
 })
