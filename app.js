@@ -103,7 +103,7 @@ app.post('/handleDropoff', (req, res) => {
     res.status(400).send()
   } finally {
     try {
-      exec(`veracrypt -t -d '${environment.VC_CONTAINER_PATH}' 2>/dev/null 1>&2`)
+      exec(`veracrypt -t -d '${environment.VC_CONTAINER_PATH}' >/dev/null`)
       if (mountDir) {
         fs.unlinkSync(mountDir)
       }
