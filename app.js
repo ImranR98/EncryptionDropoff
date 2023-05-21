@@ -104,6 +104,8 @@ app.post('/handleDropoff', (req, res) => {
   } finally {
     try {
       exec(`veracrypt -t -d '${environment.VC_CONTAINER_PATH}' >/dev/null`)
+      const currentTime = new Date()
+      fs.utimesSync(environment.VC_CONTAINER_PATH, currentTime, currentTime)
       if (mountDir) {
         fs.unlinkSync(mountDir)
       }
