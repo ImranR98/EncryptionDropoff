@@ -15,7 +15,8 @@ const config = { // End with '_PATH', '_DIR_PATH', or '_NUM' for extra validatio
     POSTPROCESS_SCRIPT_PATH: __dirname + '/default_postprocess.sh', // The script to run before moving files into the container
     NOTIF_SCRIPT_ARGS: '', // Optional extra arguments for the notification script (after WATCH_DIR_PATH)
     POSTPROCESS_SCRIPT_ARGS: '', // Optional extra arguments for the process script (after WATCH_DIR_PATH)
-    PORT_NUM: '4321' // HTTP port to listen on
+    PORT_NUM: '4321', // HTTP port to listen on
+    WATCHER_BUNDLE_TIMEOUT_NUM: '10000' // If multiple files are dropped off within this span of time (after the first file), they result in a single notification
 }
 
 for (var key in config) {

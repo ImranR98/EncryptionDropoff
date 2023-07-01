@@ -56,9 +56,16 @@ const shouldIgnoreFile = (fileName) => {
   return false
 }
 
+var bundleStarted = false
 fs.watch(environment.WATCH_DIR_PATH, (event, file) => {
   if (event == 'rename' && !shouldIgnoreFile(file) && fs.existsSync(`${environment.WATCH_DIR_PATH}/${file}`)) {
-    exec(`bash "${environment.NOTIF_SCRIPT_PATH}" "${environment.WATCH_DIR_PATH}" ${environment.NOTIF_SCRIPT_ARGS || ''}`, true, true)
+    if (!bundleStarted) {
+      bundleStarted = true
+      setTimeout(() => {
+        bundleStarted = false
+        exec(`bash "${environment.NOTIF_SCRIPT_PATH}" "${environment.WATCH_DIR_PATH}" ${environment.NOTIF_SCRIPT_ARGS || ''}`, true, true)
+      }, Number.parseInt(environment.WATCHER_BUNDLE_TIMEOUT_NUM));
+    }
   }
 })
 
