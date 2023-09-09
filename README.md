@@ -5,7 +5,7 @@ App to watch a folder for new files, then notify the user and allow them to remo
 Configured via environment variables. See `environment.js` for configuration details.
 
 Default script behaviour:
-- The default notification script sends a notification to a random [ntfy.sh](https://ntfy.sh) ID that can be overridden with an extra argument. A second argument can be used to point to your own `ntfy` server.
+- The default notification script sends a notification to a random [ntfy.sh](https://ntfy.sh) ID. You can specify your own ID, server, and auth token - see that file for details.
 - The default post-process script prefixes each file with a `YYYY-MM-DD HHMM - ` timestamp based on its created or modified date.
 
 NOTE:
