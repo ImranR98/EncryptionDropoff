@@ -63,7 +63,12 @@ fs.watch(environment.WATCH_DIR_PATH, (event, file) => {
       bundleStarted = true
       setTimeout(() => {
         bundleStarted = false
-        exec(`bash "${environment.NOTIF_SCRIPT_PATH}" "${environment.WATCH_DIR_PATH}" ${environment.NOTIF_SCRIPT_ARGS || ''}`, true, true)
+        try {
+          exec(`bash "${environment.NOTIF_SCRIPT_PATH}" "${environment.WATCH_DIR_PATH}" ${environment.NOTIF_SCRIPT_ARGS || ''}`, true, true)
+        } catch (e) {
+          console.error(e)
+          throw e
+        }
       }, Number.parseInt(environment.WATCHER_BUNDLE_TIMEOUT_NUM));
     }
   }
