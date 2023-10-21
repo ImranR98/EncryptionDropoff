@@ -15,5 +15,5 @@ CMD bash -c 'source $NVM_DIR/nvm.sh && npm start'
 # docker run \
 #   -v ~/Downloads/dropoff:/dropoff \
 #   -v ~/Downloads/container.hc:/container.hc \
-#   -e NOTIF_SCRIPT_ARGS='"nuc_services_encryptiondropoff" "https://ntfy.imranr.dev" "tk_3f9t179mitdz1zkiq3x9oq7853yza"' \
+#   -e NOTIF_SCRIPT_ARGS='"nuc_services_encryptiondropoff" "https://ntfy.sh" "ntfy_token"' \
 #   encryption-dropoff
