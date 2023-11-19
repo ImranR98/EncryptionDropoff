@@ -81,7 +81,8 @@ const getDropoffFiles = (dir) =>
 
 const moveDropoffFiles = (srcFiles, dstDir, standardizeWhiteSpace, copy) =>
   srcFiles.map(src => {
-    const dst = `${dstDir}/${standardizeWhiteSpace ? file.replace(/\s/g, ' ') : file}` // Weird things like non-breaking spaces cause issues
+    const fileName = path.basename(src)
+    const dst = `${dstDir}/${standardizeWhiteSpace ? fileName.replace(/\s/g, ' ') : fileName}` // Weird things like non-breaking spaces cause issues
     fs.cpSync(src, dst, { preserveTimestamps: true })
     if (!fs.existsSync(dst)) {
       throw `Could not move file from '${src}' to '${dst}'`
@@ -117,10 +118,10 @@ app.post('/handleDropoff', async (req, res) => {
     // Move dropoff files to an intermediate dir and run the post-process script on them
     intermediateDir = fs.mkdtempSync('/tmp/enc-tmp-')
     const dropoffFiles = getDropoffFiles(environment.WATCH_DIR_PATH)
-    const intermediateFiles = moveDropoffFiles(dropoffFiles, intermediateDir, true, true)
+    moveDropoffFiles(dropoffFiles, intermediateDir, true, true)
     await exec(`bash "${environment.POSTPROCESS_SCRIPT_PATH}" "${intermediateDir}" ${environment.POSTPROCESS_SCRIPT_ARGS || ''}`, true)
     // Move them to the mounted container dir
-    moveDropoffFiles(intermediateFiles, mountDir)
+    moveDropoffFiles(getDropoffFiles(intermediateDir), mountDir)
     // Dismount and update container mdate
     await dismount()
     const currentTime = new Date()
