@@ -24,7 +24,7 @@ const log = (data, isErr = false, skipLines = 0) => {
   for (let i = 0; i < skipLines; i++) {
     skips += '\n'
   }
-  console[isErr ? 'error' : 'log'](`${skips}${formatDate(new Date())}: ${data.toString()}`)
+  console[isErr ? 'error' : 'log'](`${skips}${formatDate(new Date())}: ${typeof data == 'object' ? JSON.stringify(data) : data.toString()}`)
 }
 
 const exec = (command, logStdOut = false, logStdErr = false) => new Promise((resolve, reject) => {
@@ -39,7 +39,7 @@ const exec = (command, logStdOut = false, logStdErr = false) => new Promise((res
       log(err || stderr, true)
     }
     if (err) {
-      reject(err)
+      reject({ error: err })
     }
     resolve(stdout)
   })
@@ -74,12 +74,15 @@ fs.watch(environment.WATCH_DIR_PATH, (event, file) => {
   }
 })
 
-const moveDropoff = (srcDir, dstDir) => {
+const moveDropoff = (srcDir, dstDir, standardizeWhiteSpace) => {
   fs.readdirSync(srcDir).forEach(file => {
     if (!shouldIgnoreFile(file)) {
       const src = `${srcDir}/${file}`
-      const dst = `${dstDir}/${file}`
+      const dst = `${dstDir}/${standardizeWhiteSpace ? file.replace(/\s/g, ' ') : file}` // Weird things like non-breaking spaces cause issues
       fs.cpSync(src, dst, { preserveTimestamps: true })
+      if (!fs.existsSync(dst)) {
+        throw `Could not move file from '${src}' to '${dst}'`
+      }
       fs.unlinkSync(src)
       log(`Moved '${src}' to '${dst}'`)
     }
@@ -109,7 +112,7 @@ app.post('/handleDropoff', async (req, res) => {
     await exec(`veracrypt -t --non-interactive -p '${req.body.password}' '${environment.VC_CONTAINER_PATH}' '${mountDir}'`)
     // Move dropoff files to an intermediate dir and run the post-process script on them
     intermediateDir = fs.mkdtempSync('/tmp/enc-tmp-')
-    moveDropoff(environment.WATCH_DIR_PATH, intermediateDir)
+    moveDropoff(environment.WATCH_DIR_PATH, intermediateDir, true)
     await exec(`bash "${environment.POSTPROCESS_SCRIPT_PATH}" "${intermediateDir}" ${environment.POSTPROCESS_SCRIPT_ARGS || ''}`, true)
     // Move them to the mounted container dir
     moveDropoff(intermediateDir, mountDir)
@@ -120,8 +123,12 @@ app.post('/handleDropoff', async (req, res) => {
     log('Dropoff Successful.')
     res.send()
   } catch (err) {
+    const safeError = typeof err == 'string' ? err : undefined
+    if (typeof err == 'object') {
+      err = JSON.stringify(err)
+    }
     log(err.toString().split(req.body.password).join(req.body.password ? '****' : ''))
-    res.status(400).send()
+    res.status(400).send(safeError)
   } finally {
     await dismount()
     if (mountDir) {

@@ -66,7 +66,7 @@
                     } else {
                         responsePanel.className = "notification is-danger"
                     }
-                    responsePanel.textContent = xhr.statusText || (xhr.status === 200 ? 'Success' : 'Fail')
+                    responsePanel.textContent = xhr.responseText || xhr.statusText || (xhr.status === 200 ? 'Success' : 'Fail')
                 }
             }
             xhr.send("password=" + encodeURIComponent(password))
