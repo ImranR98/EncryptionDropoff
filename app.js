@@ -74,32 +74,24 @@ fs.watch(environment.WATCH_DIR_PATH, (event, file) => {
   }
 })
 
-const moveDropoff = (srcDir, dstDir, standardizeWhiteSpace, copy) => {
-  fs.readdirSync(srcDir).forEach(file => {
-    if (!shouldIgnoreFile(file)) {
-      const src = `${srcDir}/${file}`
-      const dst = `${dstDir}/${standardizeWhiteSpace ? file.replace(/\s/g, ' ') : file}` // Weird things like non-breaking spaces cause issues
-      fs.cpSync(src, dst, { preserveTimestamps: true })
-      if (!fs.existsSync(dst)) {
-        throw `Could not move file from '${src}' to '${dst}'`
-      }
-      if (!copy) {
-        fs.unlinkSync(src)
-      }
-      log(`${copy ? 'Copied' : 'Moved'} '${src}' to '${dst}'`)
-    }
-  })
-}
+const getDropoffFiles = (dir) =>
+  fs.readdirSync(dir).map(file =>
+    shouldIgnoreFile(file) ? null : `${dir}/${file}`
+  ).filter(file => !!file)
 
-const clearDir = (dir) => {
-  fs.readdirSync(dir).forEach(file => {
-    if (!shouldIgnoreFile(file)) {
-      const src = `${dir}/${file}`
+const moveDropoffFiles = (srcFiles, dstDir, standardizeWhiteSpace, copy) =>
+  srcFiles.map(src => {
+    const dst = `${dstDir}/${standardizeWhiteSpace ? file.replace(/\s/g, ' ') : file}` // Weird things like non-breaking spaces cause issues
+    fs.cpSync(src, dst, { preserveTimestamps: true })
+    if (!fs.existsSync(dst)) {
+      throw `Could not move file from '${src}' to '${dst}'`
+    }
+    if (!copy) {
       fs.unlinkSync(src)
     }
+    log(`${copy ? 'Copied' : 'Moved'} '${src}' to '${dst}'`)
+    return dst
   })
-  log(`Cleared out '${dir}'`)
-}
 
 const app = express()
 app.use(express.json())
@@ -124,17 +116,18 @@ app.post('/handleDropoff', async (req, res) => {
     await exec(`veracrypt -t --non-interactive -p '${req.body.password}' '${environment.VC_CONTAINER_PATH}' '${mountDir}'`)
     // Move dropoff files to an intermediate dir and run the post-process script on them
     intermediateDir = fs.mkdtempSync('/tmp/enc-tmp-')
-    moveDropoff(environment.WATCH_DIR_PATH, intermediateDir, true, true)
+    const dropoffFiles = getDropoffFiles(environment.WATCH_DIR_PATH)
+    const intermediateFiles = moveDropoffFiles(dropoffFiles, intermediateDir, true, true)
     await exec(`bash "${environment.POSTPROCESS_SCRIPT_PATH}" "${intermediateDir}" ${environment.POSTPROCESS_SCRIPT_ARGS || ''}`, true)
     // Move them to the mounted container dir
-    moveDropoff(intermediateDir, mountDir)
+    moveDropoffFiles(intermediateFiles, mountDir)
     // Dismount and update container mdate
     await dismount()
     const currentTime = new Date()
     fs.utimesSync(environment.VC_CONTAINER_PATH, currentTime, currentTime)
     log('Dropoff Successful.')
     try {
-      clearDir(intermediateDir)
+      dropoffFiles.forEach(file => fs.unlinkSync(file))
     } catch (e) {
       //
     }
