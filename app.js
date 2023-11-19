@@ -74,7 +74,7 @@ fs.watch(environment.WATCH_DIR_PATH, (event, file) => {
   }
 })
 
-const moveDropoff = (srcDir, dstDir, standardizeWhiteSpace) => {
+const moveDropoff = (srcDir, dstDir, standardizeWhiteSpace, copy) => {
   fs.readdirSync(srcDir).forEach(file => {
     if (!shouldIgnoreFile(file)) {
       const src = `${srcDir}/${file}`
@@ -83,10 +83,22 @@ const moveDropoff = (srcDir, dstDir, standardizeWhiteSpace) => {
       if (!fs.existsSync(dst)) {
         throw `Could not move file from '${src}' to '${dst}'`
       }
-      fs.unlinkSync(src)
-      log(`Moved '${src}' to '${dst}'`)
+      if (!copy) {
+        fs.unlinkSync(src)
+      }
+      log(`${copy ? 'Copied' : 'Moved'} '${src}' to '${dst}'`)
     }
   })
+}
+
+const clearDir = (dir) => {
+  fs.readdirSync(dir).forEach(file => {
+    if (!shouldIgnoreFile(file)) {
+      const src = `${dir}/${file}`
+      fs.unlinkSync(src)
+    }
+  })
+  log(`Cleared out '${dir}'`)
 }
 
 const app = express()
@@ -112,7 +124,7 @@ app.post('/handleDropoff', async (req, res) => {
     await exec(`veracrypt -t --non-interactive -p '${req.body.password}' '${environment.VC_CONTAINER_PATH}' '${mountDir}'`)
     // Move dropoff files to an intermediate dir and run the post-process script on them
     intermediateDir = fs.mkdtempSync('/tmp/enc-tmp-')
-    moveDropoff(environment.WATCH_DIR_PATH, intermediateDir, true)
+    moveDropoff(environment.WATCH_DIR_PATH, intermediateDir, true, true)
     await exec(`bash "${environment.POSTPROCESS_SCRIPT_PATH}" "${intermediateDir}" ${environment.POSTPROCESS_SCRIPT_ARGS || ''}`, true)
     // Move them to the mounted container dir
     moveDropoff(intermediateDir, mountDir)
@@ -121,6 +133,11 @@ app.post('/handleDropoff', async (req, res) => {
     const currentTime = new Date()
     fs.utimesSync(environment.VC_CONTAINER_PATH, currentTime, currentTime)
     log('Dropoff Successful.')
+    try {
+      clearDir(intermediateDir)
+    } catch (e) {
+      //
+    }
     res.send()
   } catch (err) {
     const safeError = typeof err == 'string' ? err : undefined
